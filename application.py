@@ -1,14 +1,16 @@
 # Make a flask API for our DL Model
 
 # Import the WSGI application library
-import pyrebase
-from datetime import datetime_CAPI
 import werkzeug
 werkzeug.cached_property = werkzeug.utils.cached_property
-import pickle
-import numpy as np
-from flask_restplus import Api, Resource, fields
+from _datetime import datetime
 from flask import Flask, request, jsonify
+from flask_restplus import Api, Resource, fields
+import numpy as np
+import pickle
+import pyrebase
+from datetime import datetime_CAPI
+
 
 config = {
     "apiKey": "AIzaSyDsEmejHJK5zWxBRjjEZPzfkSelyXCWhs0",
@@ -18,15 +20,22 @@ config = {
     "storageBucket": "rdvouz-1544149987045.appspot.com",
     "messagingSenderId": "713267679911",
     "appId": "1:713267679911:web:76e3485b18192abc9f4182"
-  }
+}
 
 firebase = pyrebase.initialize_app(config)
 auth = firebase.auth()
 
+email = "fake@gmail.com"
+password = "password"
+
+user = auth.sign_in_with_email_and_password(email, password)
+user = auth.refresh(user['refreshToken'])
+user['idToken']
+
 db = firebase.database()
 
 app = Flask(__name__)
-application = app # For beanstalk
+application = app  # For beanstalk
 api = Api(app, version='1.0', title='Logistic Regression',
           description='Logistic Regression')
 ns = api.namespace('DS2_3_docker_and_aws', description='Methods')
@@ -68,6 +77,11 @@ class LogRegPrediction(Resource):
 
         # Make the prediction
         prediction = model.predict(X)
+        data = {
+            "prediction": str(prediction),
+            "date": str(datetime.now())
+        }
+        results = db.child("users").push(data, user['idToken'])
 
         # Return prediction
         return {'prediction': str(prediction)}
